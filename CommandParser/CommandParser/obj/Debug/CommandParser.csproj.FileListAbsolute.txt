@@ -1,0 +1,6 @@
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\bin\Debug\CommandParser.exe.config
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\bin\Debug\CommandParser.exe
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\bin\Debug\CommandParser.pdb
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\obj\Debug\CommandParser.csprojResolveAssemblyReference.cache
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\obj\Debug\CommandParser.exe
+C:\Users\TGN-PC\documents\visual studio 2017\Projects\CommandParser\CommandParser\obj\Debug\CommandParser.pdb
