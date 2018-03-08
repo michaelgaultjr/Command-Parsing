@@ -3,22 +3,65 @@ using System.IO;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using ConsoleUtils;
 
 namespace CommandParser
 {
     class Commands
     {
+        /// <summary>
+        /// Stores Command Keys and Values
+        /// </summary>
+        public static Dictionary<string, string> commandList = new Dictionary<string, string>();
 
-        public void Echo(string message)
+        /// <summary>
+        /// Initalizes commands
+        /// </summary>
+        public static void InitCommands()
         {
-            Console.WriteLine(message);
+            commandList.Add("echo", "Echo");
+            commandList.Add("file", "FileCMD");
+            commandList.Add("clear", "Clear");
+            commandList.Add("run", "Run");
+            commandList.Add("google", "Google");
+            commandList.Add("close", "Close");
+            commandList.Add("msgbox", "MsgBox");
+            commandList.Add("var", "Var");
+            commandList.Add("math", "MathCMD");
+            commandList.Add("list", "List");
         }
-        
-        /// <summary>
-        /// File Functions
-        /// <summary>
 
-        // Create File :: Creates the file at the path
+        /// <summary>
+        /// Returns the number of initalized commands
+        /// </summary>
+        public static int Count
+        {
+            get
+            {
+                return commandList.Count;
+            }
+        }
+
+        /// <summary>
+        /// Echo Method :: Echos specified message back to the console
+        /// </summary>
+        /// <param name="message">Message to echo</param>
+        public void Echo(object message)
+        {
+            if (message.GetType() == typeof(string))
+                Console.WriteLine(message);
+            else
+            {
+                ConsoleUtil.Error($"Type is '{message.GetType()}' command requires type '{typeof(string)}'");
+            }
+        }
+
+        /// <summary>
+        /// Create File :: Creates the file at the path
+        /// </summary>
+        /// <param name="mode">Modes: Create | Edit | Delete</param>
+        /// <param name="path"></param>
+        /// <param name="content"></param>
         public void FileCMD(string mode, string path, string content = null)
         {
             // Create
@@ -27,7 +70,7 @@ namespace CommandParser
                 try
                 {
                     File.Create(path + @"\" + content);
-                    Console.WriteLine($"{content} created at {path}");
+                    ConsoleUtil.Succeed($"{content} created at {path}");
                 }
                 catch (Exception e)
                 {
@@ -51,7 +94,7 @@ namespace CommandParser
             // Delete
             else if (mode.ToLower() == "delete")
             {
-                Console.WriteLine($"Are you sure you want to delete '{path}'?" + Environment.NewLine + "Type 'CONFIRM' to confirm.");
+                ConsoleUtil.Warning($"Are you sure you want to delete '{path}'?" + Environment.NewLine + "Type 'CONFIRM' to confirm.");
                 string input = Console.ReadLine();
                 try
                 {
@@ -71,18 +114,20 @@ namespace CommandParser
                 }
             }
         }
-        
-        /// <summary>
-        /// File Functions
-        /// <summary>
 
-        // Clear Command :: Clears the console
+        /// <summary>
+        /// Clear Method :: Clears the console
+        /// </summary>
         public void Clear()
         {
             Console.Clear();
         }
-        
-        // Run Command :: Runs an application, takes up to 1 argument
+
+        /// <summary>
+        /// Run Command :: Runs the specified applcation
+        /// </summary>
+        /// <param name="application">Application name/directory</param>
+        /// <param name="args">Args for the application</param>
         public void Run(string application, string args = null)
         {
             if (args == null)
@@ -92,81 +137,77 @@ namespace CommandParser
                 Process.Start(application, args);
         }
 
-        // Google Command :: Googles whatever you type, takes 1 argument
+        /// <summary>
+        /// Google Command :: Googles whatever you type, takes 1 argument
+        /// </summary>
+        /// <param name="question">Question to Search for</param>
         public void Google(string question)
         {
             Run("chrome", $@"https://www.google.com/search?q={question}");
         }
 
-        // Close Command :: Closes the console
+        /// <summary>
+        /// Close Command :: Closes the console
+        /// </summary>
         public void Close()
         {
             Environment.Exit(0);
         }
 
+        /// <summary>
+        /// MsgBox Method :: Displays a message box with text and title
+        /// </summary>
+        /// <param name="text">Text inside the Message Box</param>
+        /// <param name="title">Tile of the Message Box</param>
         public void MsgBox(string text, string title = "Message Box")
         {
-            MessageBox.Show(text, title);
-            
+            MessageBox.Show(text, title);  
         }
 
-        public void Var(string option, string arg1 = "", string arg2 = "")
+        /// <summary>
+        /// Var Method :: Can Create, List, or Remove varibles
+        /// </summary>
+        /// <param name="option">Options: add | list | remove</param>
+        /// <param name="name">Name of the variable</param>
+        /// <param name="value">Value of the variable</param>
+        public void Var(string option, string name, object value)
         {
-            
             if (option.ToLower() == "add")
-                Variables.varList.Add(arg1, arg2);
-            if (option.ToLower() == "remove")
-                Variables.varList.Remove(arg1);
-            if (option.ToLower() == "list")
+                Variables.varList.Add(name, value);
+            else if (option.ToLower() == "remove")
+                Variables.varList.Remove(name);
+            else if (option.ToLower() == "list")
             {
                 bool ran;
                 ran = false;
                 foreach (KeyValuePair<string, object> kvp in Variables.varList)
                 {
                     ran = true;
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine($"Key: {kvp.Key} || Value: {kvp.Value}");
-                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    if (kvp.Value.GetType() == typeof(string))
+                        ConsoleUtil.Succeed($"Key: {kvp.Key} || Value: \"{kvp.Value}\" || Value Type: {kvp.Value.GetType()}");
+                    else
+                        ConsoleUtil.Succeed($"Key: {kvp.Key} || Value: {kvp.Value} || Value Type: {kvp.Value.GetType()}");
                 }
                 if (ran == false)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("No Variables");
-                    Console.ForegroundColor = ConsoleColor.White;
+                    ConsoleUtil.Error("No Variables found");
                 }
             }
+            else
+                ConsoleUtil.Error($"{option} is invaild");
+
         }
 
-        public void Return(string _var)
+        /// <summary>
+        /// MathCMD Method :: Does math on 2 numbers (Will probably be updated to work with more numbers)
+        /// </summary>
+        /// <param name="_operator">Operator: + | - | * | /</param>
+        /// <param name="value1">First value</param>
+        /// <param name="value2">Second Value</param>
+        public void MathCMD(string _operator, int value1, int value2)
         {
-            Console.WriteLine($"{_var} >> {Variables.varList[_var]}");
-        }
-
-        double value1;
-        double value2;
-        public void MathCMD(string _operator, string _value1, string _value2)
-        {
-
             // Try pase value 1
-            try
-            { double.TryParse(_value1, out value1); }      
-            catch (Exception e)
-            {
-                Console.BackgroundColor = ConsoleColor.Red;
-                Console.WriteLine("Value 1 isn't a number");
-                Console.BackgroundColor = ConsoleColor.Cyan;
-            }
-
-            // Try parse value 2
-            try
-            { double.TryParse(_value2, out value2); }
-            catch (Exception e)
-            {
-                Console.BackgroundColor = ConsoleColor.Red;
-                Console.WriteLine("Value 2 isn't a number ");
-                Console.BackgroundColor = ConsoleColor.Cyan;
-            }
-            double math = 0.0;
+            int math = 0;
 
             if (_operator.ToLower() == "add")
             {
@@ -187,6 +228,17 @@ namespace CommandParser
             {
                 math = value1 / value2;
                 Console.WriteLine(math.ToString("N0"));
+            }
+        }
+
+        /// <summary>
+        /// List Method :: Prints a list of all Initalized Commands
+        /// </summary>
+        public void List()
+        {
+            foreach (var cmd in commandList)
+            {
+                ConsoleUtil.Succeed($"{cmd.Key}");
             }
         }
     }

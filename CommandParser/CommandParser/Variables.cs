@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace CommandParser
 {
@@ -8,6 +6,9 @@ namespace CommandParser
     {
         Parser _parser = new Parser();
 
+        /// <summary>
+        /// Stores all The Varibles
+        /// </summary>
         public static Dictionary<string, object> varList = new Dictionary<string, object>();
     }
 }

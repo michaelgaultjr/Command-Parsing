@@ -1,34 +1,40 @@
 ﻿using System;
 using System.IO;
+using ConsoleUtils;
 
 namespace CommandParser
 {
     class Program
     {
-        static Parser fileParse = new Parser();
-        static CommandHandler handler = new CommandHandler();
+        static Parser fileParse = new Parser(); // Setup and Initalize parser instance
+        static CommandHandler handler = new CommandHandler(); // Setup and Initalize CommandHandler instance
 
+        // Main Method
         static void Main(string[] args)
         {
-            Setup();
-            if (args.Length == 1) //make sure an argument is passed
+            Setup(); // Call Setup Method
+            if (args.Length == 1) // Check if it's a script
             {
-                FileInfo file = new FileInfo(args[0]);
-                string extention = Path.GetExtension(args[0]);
-                if (file.Exists && extention == ".ns") //make sure it's actually a file
+                FileInfo file = new FileInfo(args[0]); // Get Information about the file
+                if (file.Exists && file.Extension == ".ns") // Check if the file exists and that it's a .ns(Ninja Script) File
                 {
-                    handler.Reset(CommandHandler.CommandCaller.Script);
-                    fileParse.Run(args[0]);
+                    handler.Reset(CommandHandler.CommandCaller.Script); // Setup Handler
+                    fileParse.Run(args[0]); // Run the script
                 }
             }
-            handler.Reset(CommandHandler.CommandCaller.Console);
+            else
+                handler.Reset(CommandHandler.CommandCaller.Console); // Setup Handler
             Console.ReadKey();
         }
 
+        /// <summary>
+        /// Setup Method :: Initalizes Commands, and sets the Window Title
+        /// </summary>
         static void Setup()
         {
+            Commands.InitCommands();
+            ConsoleUtil.ColoredMessage($"[Initalized '{Commands.Count}' Commands]", ConsoleColor.White);
             DateTime today = DateTime.Today;
-
             Console.Title = "Ninja Script [" + today.ToShortDateString() + "]";
         }
     }

@@ -1,133 +1,97 @@
 ﻿using System;
 using System.Reflection;
 using System.Linq;
+using System.Collections;
+using ConsoleUtils;
 
 namespace CommandParser
 {
     class CommandHandler
     {
-        // CommandCaller Enum :: Stores the caller options
+        /// <summary>
+        /// CommandCaller Enum :: Stores the caller options
+        /// </summary>
         public enum CommandCaller
         {
             Script,
             Console
         };
 
-        Commands _commands;
-        Parser parser = new Parser();
+        Commands _commandList; // Create _commandList to be initalized
+        Parser parser = new Parser(); // Create parser and intalize
 
-        public void Command(CommandCaller caller, string cmd = "")
+        /// <summary>
+        /// HandleCommand Method :: Handles Command Inputs
+        /// </summary>
+        /// <param name="caller">Caller: Console | Script</param>
+        /// <param name="input">Unparsed Command</param>
+        public void HandleCommand(CommandCaller caller, string input = "")
         {
-            _commands = new Commands();
+            // Initalize _commandList instance
+            _commandList = new Commands();
 
-            if (cmd == "" || cmd == null)
+            // Check if the input is empty
+            if (string.IsNullOrWhiteSpace(input))
             {
-                cmd = Console.ReadLine();
+                input = Console.ReadLine(); // Get current input if the current input is empty
             }
+            
+            // Create and Initalize parameters array list
+            ArrayList parameters = new ArrayList();
+            
+            parameters.AddRange(parser.Parse(input)); // Add parsed parameters to parameters array list
+            string command = parameters[0].ToString().ToLower(); // Check what the command is
+            parameters.RemoveAt(0); // Remove the command from parsed parameters
 
-            string[] parameters = parser.Parse(cmd);
-            if (string.IsNullOrWhiteSpace(cmd))
+            if (Commands.commandList.ContainsKey(command)) // Check is the command is vaild
             {
-                goto End;
+                ExecCommand(Commands.commandList[command], parameters); // Execute command
+                Reset(caller); // Reset Handler
             }
-            string command = parameters[0].ToLower();
-
-            try
+            else
             {
-                switch (command)
-                 {
-                     // Echo Command :: Prints text to the console
-                     case "echo":
-                         _commands.Echo(parameters[1]);
-                         goto Reset;
-
-                     // File Command :: Allows you to Create, Edit, or Delete files
-                     case "file":
-                        try
-                        {
-                            if (parameters[1].ToLower() == "create" || parameters[1].ToLower() == "edit")
-                            {
-                                _commands.FileCMD(parameters[1], parameters[2], parameters[3]);
-                                _commands.FileCMD(parameters[1], parameters[2], parameters[3]);
-                            }
-                            else if (parameters[1].ToLower() == "delete")
-                                _commands.FileCMD(parameters[1], parameters[2]);
-                         }
-                         catch (Exception e)
-                         {
-                             Console.WriteLine(e);
-                         }
-                         goto Reset;
-
-                     // Clear Command :: Clears the console 
-                     case "clear":
-                         _commands.Clear();
-                         goto Reset;
-
-                     // Run Command :: Runs an application, can take arugments such as a browser link if using something like chrome
-                     case "run":
-                         if (3 > parameters.Length)
-                             _commands.Run(parameters[1]);
-                         else if (3 <= parameters.Length)
-                             _commands.Run(parameters[1], parameters[2]);
-                         goto Reset;
-
-                     // Google Command :: Googles whatever you type as the arugment
-                     case "google":
-                         _commands.Google(parameters[1]);
-                         goto Reset;
-
-                     // Close Command :: Closes the console
-                     case "close":
-                         _commands.Close();
-                         goto Reset;
-
-                     case "msgbox":
-                         if (3 > parameters.Length)
-                             _commands.MsgBox(parameters[1]);
-                         else if (3 <= parameters.Length)
-                             _commands.MsgBox(parameters[1], parameters[2]);           
-                         goto Reset;
-
-                    case "var":
-                        if (4 <= parameters.Length)
-                            _commands.Var(parameters[1], parameters[2], parameters[3]);
-                        else if (3 > parameters.Length)
-                            _commands.Var(parameters[1]);
-                        goto Reset;
-
-                    case "return":
-                        _commands.Return(parameters[1]);
-                        goto Reset;
-
-                    case "math":
-                        _commands.MathCMD(parameters[1], parameters[2], parameters[3]);
-                        goto Reset;
-
-                     // Default Case :: Runs when there isn't a valid command
-                     default:
-                         Console.ForegroundColor = ConsoleColor.Red;
-                         Console.WriteLine($"Command '{command}' does not exist.");
-                         Console.ForegroundColor = ConsoleColor.Cyan;
-                        goto Reset;
-
-                     // Reset Label :: Calls the reset function and breaks
-                     Reset:
-                         Reset(caller);
-                         break;
-                 }
+                ConsoleUtil.Error($"{command} is invaild"); // Pint error if command is invaild
+                Reset(caller); // Reset Handler
             }
-            catch (Exception e)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"CommandHandler Error: {e}");
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                Reset(CommandCaller.Console);
-            }
-            End:
-            Reset(caller);
         }
 
+        /// <summary>
+        /// Execute Command Method :: Takes the Method name and Parameters and runs it 
+        /// </summary>
+        /// <param name="_command">Name of the method</param>
+        /// <param name="_parameters">Parameters for the method</param>
+        void ExecCommand(string _command, ArrayList _parameters)
+        {
+            
+            _commandList = new Commands();
+
+            // Get type of method and get method info
+            Type _commandType = _commandList.GetType();
+            MethodInfo runMethod = _commandType.GetMethod(_command);
+            
+            // Get amount of Parameters
+            int count = runMethod.GetParameters().Count();
+
+            // Insert or remove parameters depending on amount
+            for (int p = _parameters.Count; p < count; p++)
+            {
+                    _parameters.Insert(p, null);
+            }
+            for (int p = _parameters.Count; p > count; p--)
+            {
+                _parameters.RemoveAt(p - 1);
+            }
+            // Convert parameters to object array
+            object[] finalParameters = (object[])_parameters.ToArray(typeof(object));
+
+            // Run Command/Method
+            runMethod.Invoke(_commandList, finalParameters); 
+        }
+
+        /// <summary>
+        /// Reset Method :: Resets everything so it can run the next command properly
+        /// </summary>
+        /// <param name="caller">Caller: Console | Script</param>
         public void Reset(CommandCaller caller)
         {
             if (caller == CommandCaller.Console)
@@ -135,13 +99,12 @@ namespace CommandParser
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.Write("> ");
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Command(CommandCaller.Console);
+                HandleCommand(CommandCaller.Console);
             }
             if (caller == CommandCaller.Script)
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
             }
-            
         }
     }
 }

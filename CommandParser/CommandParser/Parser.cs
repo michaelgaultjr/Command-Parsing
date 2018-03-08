@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using ConsoleUtils;
 
 namespace CommandParser
 {
@@ -25,39 +27,88 @@ namespace CommandParser
 
                 // If it's not a comment pass the command
                 if (!string.IsNullOrWhiteSpace(lines[i]) || firstChars != "//")
-                    handler.Command(CommandHandler.CommandCaller.Script, lines[i]);
+                    handler.HandleCommand(CommandHandler.CommandCaller.Script, lines[i]);
                 else // If it's a comment, ignore this line and move onto the next
                     handler.Reset(CommandHandler.CommandCaller.Script);
             }
 
         }
 
-        // Parse Method :: Handles all the parsing and "filtering" of commands.
-        public string[] Parse(string cmd)
+        // New Parser :: Supports Strings, Ints, & Variables 
+        public ArrayList Parse(string _input)
         {
-            // Split up parameters
-            var parts = Regex.Matches(cmd, @"[\""].+?[\""]|[^ ]+").Cast<Match>().Select(m => m.Value).ToArray();
+            // Splits up the string for parsing
+            object[] splitObjects = Regex.Matches(_input, @"[\""].+?[\""]|[^ ]+").Cast<Match>().Select(m => m.Value).ToArray();
 
-            // Loop through each string in the array
-            for (int i = 0; i < parts.Length; i++)
+            // Contains all parsed args
+            ArrayList parsedObjects = new ArrayList();
+            parsedObjects.AddRange(splitObjects);
+            // Loops through command
+            for (int i = 0; i < parsedObjects.Count; i++)
             {
-                // Remove quotes from strings
-                parts[i] = parts[i].Trim(new Char[] { '"' });
-                if (parts[i].Contains("<"))
+                // Varible checking
+                if (parsedObjects[i].ToString().Contains("<"))
                 {
-                    // Get the key
-                    string input = Regex.Match(parts[i], @"\<([^)]*)\>").Groups[1].Value;
+                    string input = Regex.Match(parsedObjects[i].ToString(), @"\<([^)]*)\>").Groups[1].Value;                
+                    if (Variables.varList.ContainsKey(input.Trim(new Char[] { '<', '>' })))
+                    {
+                        object value = Variables.varList[input.Trim(new Char[] { '<', '>' })];
+                        string output = Regex.Replace(parsedObjects[i].ToString(), @"\<([^)]*)\>", value.ToString());
+                        parsedObjects[i] = output;
+                    }
+                    else
+                    {
+                        ConsoleUtil.Error($"Variable '{input}' doesn't exist");
+                    }
 
-                    // Use key to get value
-                    object text = Variables.varList[input.Trim(new Char[] { '<', '>'})];
-
-                    // Replace key with value
-                    string output = Regex.Replace(parts[i], @"\<([^)]*)\>", text.ToString());
-                    parts.SetValue(output, i);
                     
                 }
+
+                // Int parsing
+                if (IsDigits(parsedObjects[i].ToString()))
+                {
+                    try
+                    {
+                        parsedObjects[i] = ToInt(parsedObjects[i].ToString());
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Int Parse Error: {e}");
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        parsedObjects[i] = parsedObjects[i].ToString().Trim(new Char[] { '"' });
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"Else Error: {e}");
+                    }
+                }
             }
-            return parts;
+
+            // Return parsed Command
+            return parsedObjects;
+        }
+
+        // IsDigits Bool :: Checks if the string is a number
+        bool IsDigits(string s)
+        {
+            foreach (char c in s)
+            {
+                if (c < '0' || c > '9')
+                    return false;
+            }
+            return true;
+        }
+
+        // ToInt Int :: Converts the string to and int and returns the value
+        int ToInt(string s)
+        {
+            Int32.TryParse(s, out int value);
+            return value;
         }
     }
 }
