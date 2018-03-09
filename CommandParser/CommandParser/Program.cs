@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using ConsoleUtils;
+using System.Windows.Forms;
 
 namespace CommandParser
 {
@@ -10,6 +11,7 @@ namespace CommandParser
         static CommandHandler handler = new CommandHandler(); // Setup and Initalize CommandHandler instance
 
         // Main Method
+        
         static void Main(string[] args)
         {
             Setup(); // Call Setup Method
@@ -19,7 +21,7 @@ namespace CommandParser
                 if (file.Exists && file.Extension == ".ns") // Check if the file exists and that it's a .ns(Ninja Script) File
                 {
                     handler.Reset(CommandHandler.CommandCaller.Script); // Setup Handler
-                    fileParse.Run(args[0]); // Run the script
+                    fileParse.RunFile(args[0]); // Run the script
                 }
             }
             else

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.Collections.Generic;
 using ConsoleUtils;
+using System.Reflection;
 
 namespace CommandParser
 {
@@ -28,7 +29,9 @@ namespace CommandParser
             commandList.Add("msgbox", "MsgBox");
             commandList.Add("var", "Var");
             commandList.Add("math", "MathCMD");
-            commandList.Add("list", "List");
+            commandList.Add("help", "Help");
+            commandList.Add("server", "RunServer");
+            commandList.Add("client", "RunClient");
         }
 
         /// <summary>
@@ -52,7 +55,7 @@ namespace CommandParser
                 Console.WriteLine(message);
             else
             {
-                ConsoleUtil.Error($"Type is '{message.GetType()}' command requires type '{typeof(string)}'");
+                 ConsoleUtil.Error($"Type is '{message.GetType()}' command requires type '{typeof(string)}'");
             }
         }
 
@@ -204,10 +207,46 @@ namespace CommandParser
         /// <param name="_operator">Operator: + | - | * | /</param>
         /// <param name="value1">First value</param>
         /// <param name="value2">Second Value</param>
-        public void MathCMD(string _operator, int value1, int value2)
+        public void MathCMD(object[] _math)
         {
-            // Try pase value 1
+            ConsoleUtil.Error("Not working currently");
+            return;
             int math = 0;
+            for (int i = 0; i < _math.Length; i++)
+            {
+                if (_math[i].ToString() == "+")
+                {
+                    int a = (int)_math[i - 1];
+                    int b = (int)_math[i + 1];
+
+                    math += a + b;
+                }
+                else if (_math[i].ToString() == "-")
+                {
+                    int a = (int)_math[i - 1];
+                    int b = (int)_math[i + 1];
+
+                    math += a - b;
+                }
+                else if (_math[i].ToString() == "*")
+                {
+                    int a = (int)_math[i - 1];
+                    int b = (int)_math[i + 1];
+
+                    math += a * b;
+                }
+                if (_math[i].ToString() == "/")
+                {
+                    int a = (int)_math[i - 1];
+                    int b = (int)_math[i + 1];
+
+                    math += a + b;
+                }
+                ConsoleUtil.Succeed(math.ToString());
+            }
+
+            // Try pase value 1
+            /*int math = 0;
 
             if (_operator.ToLower() == "add")
             {
@@ -228,17 +267,61 @@ namespace CommandParser
             {
                 math = value1 / value2;
                 Console.WriteLine(math.ToString("N0"));
-            }
+            } */
+
+
         }
 
         /// <summary>
         /// List Method :: Prints a list of all Initalized Commands
         /// </summary>
-        public void List()
+        public void Help()
         {
             foreach (var cmd in commandList)
             {
                 ConsoleUtil.Succeed($"{cmd.Key}");
+            }
+        }
+
+        [STAThread]
+        public static void RunServer(int port)
+        {
+            Application.EnableVisualStyles();
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+
+            if (port == 0)
+                ServerForm.Port = 8080;
+            else
+            ServerForm.Port = port;
+
+            Application.Run(new ServerForm()); // or whatever
+        }
+
+        [STAThread]
+        public static void RunClient(string username, string ip, int port)
+        {
+            if (ip == null)
+                ip = "127.0.0.1";
+            if (port == 0)
+                port = 8080;
+            if (username == null)
+                username = "Guest";
+
+            ClientForm.Ip = ip;
+            ClientForm.Port = port;
+            ClientForm.Username = username;
+            Application.EnableVisualStyles();
+            AppDomain.CurrentDomain.AssemblyResolve += new ResolveEventHandler(CurrentDomain_AssemblyResolve);
+            Application.Run(new ClientForm()); // or whatever
+        }
+
+        private static Assembly CurrentDomain_AssemblyResolve(object sender, ResolveEventArgs args)
+        {
+            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("CommandParser.SimpleTCP.dll"))
+            {
+                byte[] assemblyData = new byte[stream.Length];
+                stream.Read(assemblyData, 0, assemblyData.Length);
+                return Assembly.Load(assemblyData);
             }
         }
     }

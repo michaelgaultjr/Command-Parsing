@@ -11,9 +11,8 @@ namespace CommandParser
     {
         CommandHandler handler;
         // Run Method :: Handles the running of script files
-        public void Run(string path)
+        public void RunFile(string path)
         {
-            // Create handler instance
             handler = new CommandHandler();
 
             // Reads all the lines of the file and puts them in an array
@@ -27,18 +26,21 @@ namespace CommandParser
 
                 // If it's not a comment pass the command
                 if (!string.IsNullOrWhiteSpace(lines[i]) || firstChars != "//")
+                {
                     handler.HandleCommand(CommandHandler.CommandCaller.Script, lines[i]);
+                }
                 else // If it's a comment, ignore this line and move onto the next
+                {
                     handler.Reset(CommandHandler.CommandCaller.Script);
+                }          
             }
-
         }
 
         // New Parser :: Supports Strings, Ints, & Variables 
         public ArrayList Parse(string _input)
         {
-            // Splits up the string for parsing
-            object[] splitObjects = Regex.Matches(_input, @"[\""].+?[\""]|[^ ]+").Cast<Match>().Select(m => m.Value).ToArray();
+            // Splits up the string for parsing // [\""].+?[\""]|[^ ]+
+            object[] splitObjects = Regex.Matches(_input, @"[\""].+?[\""]|[[\""].+?[]\""]|[^ ]+").Cast<Match>().Select(m => m.Value).ToArray();
 
             // Contains all parsed args
             ArrayList parsedObjects = new ArrayList();
@@ -60,8 +62,23 @@ namespace CommandParser
                     {
                         ConsoleUtil.Error($"Variable '{input}' doesn't exist");
                     }
+                }
 
-                    
+                if (parsedObjects[i].ToString().Contains("["))
+                {
+                    parsedObjects[i] = parsedObjects[i].ToString().Trim(new Char[] { '[', ']' });
+
+                    // object[] array = parsedObjects[i].ToString().Split(new Char[] { ' ' });
+                    ArrayList array = new ArrayList();
+                    array.AddRange(parsedObjects[i].ToString().Split(new Char[] { ' ' }));
+                    for (int v = 0; v < array.Count; v++)
+                    {
+                        if (IsDigits(array[v].ToString()))
+                        {
+                            array[v] = ToInt(array[v].ToString());
+                        }                 
+                    }
+                    parsedObjects[i] = (object[])array.ToArray(typeof(object));                 
                 }
 
                 // Int parsing
