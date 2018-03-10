@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Windows.Forms;
+using System.IO;
 using SimpleTCP;
 
 namespace CommandParser
@@ -18,6 +19,8 @@ namespace CommandParser
 
         private void ServerForm_Load(object sender, EventArgs e)
         {
+            //deleting old logs
+            if (File.Exists("serverLog.txt") == true) File.Delete("serverLog.txt");
             server = new SimpleTcpServer();
             server.Delimiter = 0x00;
             server.StringEncoder = Encoding.UTF8;
@@ -31,7 +34,15 @@ namespace CommandParser
             {
                 string msg = e.MessageString.Substring(0, (e.MessageString.Length - 1));
                 serverConsole.Text += msg + Environment.NewLine;
-                server.BroadcastLine(msg + Environment.NewLine);
+                if (msg.Substring(0, 4) != "DATA") server.BroadcastLine(msg + Environment.NewLine);
+                else
+                {
+                    string[] msg2 = msg.Split(' ');
+                    server.Broadcast(msg2[1] + " has joined!");
+                    File.AppendAllText(@"serverLog.txt", msg + Environment.NewLine);
+                }
+
+
             });
         }
         
